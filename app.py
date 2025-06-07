@@ -25,7 +25,7 @@ with st.container():
             <li><strong>Goal:</strong> Spot which drug works for which bug—and where resistance lurks.</li>
           </ul>
 
-          Use the dropdown to focus on <strong>one antibiotic</strong> or compare <strong>all three</strong>.
+          Use the dropdowns to focus on <strong>one antibiotic</strong> or compare <strong>all three</strong> or focus on <strong>gram-positive</strong> or <strong>gram_negative</strong> (or both).
         </div>
         """),
         unsafe_allow_html=True
