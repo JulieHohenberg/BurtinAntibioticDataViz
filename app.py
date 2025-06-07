@@ -93,7 +93,10 @@ choice = st.selectbox(
     index=0
 )
 
+gram_type = st.selectbox("Gram stain filter", ["All", "positive", "negative"])
 data_sel = long if choice == "All" else long[long["Antibiotic"] == choice]
+if gram_type != "All":
+    data_sel = data_sel[data_sel["Gram_Staining"] == gram_type]
 single   = choice != "All"
 
 # Heat-map with conditional stroke (tooltips intact)
