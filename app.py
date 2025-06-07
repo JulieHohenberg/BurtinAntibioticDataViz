@@ -1,4 +1,10 @@
+import streamlit as st
 import pandas as pd
+import altair as alt
+
+st.set_page_config(page_title="Bacteria Antibiotic Resistance", layout="wide")
+st.title("Bacteria Sensitivity to Antibiotics")
+
 
 data = [
     {"Bacteria":"Aerobacter aerogenes","Penicillin":870,"Streptomycin":1,"Neomycin":1.6,"Gram_Staining":"negative","Genus": "other"},
