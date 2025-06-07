@@ -25,47 +25,33 @@ data = [
     {"Bacteria":"Streptococcus viridans","Penicillin":0.005,"Streptomycin":10,"Neomycin":40,"Gram_Staining":"positive","Genus": "Streptococcus"}
 ]
 
-# Create DataFrame
 df = pd.DataFrame(data)
 
-antibiotic = st.sidebar.selectbox("Choose an Antibiotic", ["Penicillin", "Streptomycin", "Neomycin"])
-sort_order = st.sidebar.radio("Sort Order", ["Ascending", "Descending"])
-gram_filter = st.sidebar.multiselect("Gram Staining", ["positive", "negative"], default=["positive", "negative"])
+# Sidebar filters
+antibiotic = st.sidebar.selectbox("Choose an antibiotic:", ["Penicillin", "Streptomycin", "Neomycin"])
+gram_types = st.sidebar.multiselect("Filter by Gram staining:", options=df["Gram_Staining"].unique(), default=list(df["Gram_Staining"].unique()))
 
-# Filtered + sorted DataFrame
-filtered = df[df["Gram_Staining"].isin(gram_filter)].sort_values(by=antibiotic, ascending=(sort_order == "Ascending"))
+# Filter data
+filtered = df[df["Gram_Staining"].isin(gram_types)].copy()
+filtered = filtered[filtered[antibiotic] > 0]  # remove zero values to avoid log issues
 
-# Bar chart
+# Chart
 chart = alt.Chart(filtered).mark_bar().encode(
     x=alt.X(f"{antibiotic}:Q", scale=alt.Scale(type="log"), title=f"MIC of {antibiotic} (μg/mL)"),
-    y=alt.Y("Bacteria:N", sort="-x", title=None),
-    color=alt.Color("Gram_Staining:N", scale=alt.Scale(domain=["positive", "negative"], range=["#8e44ad", "#e74c3c"])),
-    tooltip=["Bacteria", "Gram_Staining", f"{antibiotic}"]
+    y=alt.Y("Bacteria:N", sort="-x"),
+    color=alt.Color("Gram_Staining:N", legend=alt.Legend(title="Gram Staining")),
+    tooltip=["Bacteria", "Gram_Staining", alt.Tooltip(f"{antibiotic}:Q", format=".3f")]
 ).properties(
     width=800,
     height=500,
-    title=f"{antibiotic} Effectiveness Across Bacteria"
-).configure_title(
-    fontSize=20,
-    anchor='start',
-    color='black'
+    title=f"Effectiveness of {antibiotic} by Bacteria (Lower MIC = More Effective)"
 )
 
-# Display chart
 st.altair_chart(chart, use_container_width=True)
 
-# Insight box
-st.markdown("### Key Insight")
-if antibiotic == "Penicillin":
-    st.info("Penicillin is highly effective against many Gram-positive bacteria (e.g. *Staphylococcus aureus*) but struggles with Gram-negative strains like *E. coli*.")
-elif antibiotic == "Streptomycin":
-    st.info("Streptomycin is broadly effective across both Gram-positive and Gram-negative bacteria, though some resistance exists (e.g. *Streptococcus hemolyticus*).")
-else:
-    st.info("Neomycin tends to be most effective in low doses against both Gram types, but some strains like *Streptococcus viridans* are highly resistant.")
-
-# Footer
-st.markdown("---")
-st.caption("Data: Burtin's Antibiotic Chart | MIC = Minimum Inhibitory Concentration (μg/mL) — lower means more effective")
+# show data table
+if st.checkbox("Show data table"):
+    st.dataframe(filtered.sort_values(by=antibiotic))
 
 
 
