@@ -12,12 +12,10 @@ st.set_page_config(page_title="Which Antibiotic Works Best?",
 st.title("Antibiotic Potency Across 16 Bacteria (Burtin, 1951)")
 st.markdown(
 """
-Lower **MIC** (Minimum Inhibitory Concentration) ⇒ less drug required to stop growth.  
-Cells outlined in **black** meet a classic “highly sensitive” benchmark (**MIC ≤ 1 µg/mL**).
+Lower **MIC** (Minimum Inhibitory Concentration) → greater potency.  
+Cells outlined in **black** meet a “highly sensitive” rule-of-thumb (**MIC ≤ 1 µg/mL**).
 """
 )
-
-#Raw data → DataFrame → tidy (long) format
 
 data = [
     {"Bacteria":"Aerobacter aerogenes","Penicillin":870,"Streptomycin":1,"Neomycin":1.6,"Gram_Staining":"negative","Genus":"other"},
@@ -46,86 +44,86 @@ long = df.melt(
     var_name="Antibiotic",
     value_name="MIC"
 )
-long["logMIC"]   = np.log10(long["MIC"])
+long["logMIC"]    = np.log10(long["MIC"])
 long["Sensitive"] = long["MIC"] <= 1
 
-#Antibiotic selector
+# Colour scale domain frozen so the palette is consistent
+LOG_DOMAIN = [np.log10(0.001), np.log10(870)]  # [-3, 2.94]
+
+#Selector
 
 choice = st.selectbox(
-    "Select an antibiotic or view all:",
-    ["All", "Penicillin", "Streptomycin", "Neomycin"],
-    index=0
+    "Pick an antibiotic (or view them all):",
+    ["All", "Penicillin", "Streptomycin", "Neomycin"]
 )
 
-if choice == "All":
-    long_filt = long
-    width_val = 550
-else:
-    long_filt = long[ long["Antibiotic"] == choice ]
-    width_val = 250
+data_sel = long if choice == "All" else long[long["Antibiotic"] == choice]
 
-#Heat-map (with outlined sensitive cells)
+# Chart width & legend handling
+single_col = choice != "All"
+chart_width = 340 if single_col else 600
+show_legend = not single_col   # hide legend when there’s just one column
 
-base = alt.Chart(long_filt).encode(
-    x=alt.X("Antibiotic:N", title=None),
-    y=alt.Y("Bacteria:N",   sort="-x", title=None)
+# Chart height = 30 px per row
+unique_bugs = data_sel["Bacteria"].nunique()
+chart_height = unique_bugs * 30
+
+#Heat-map with fixed band size
+
+# We keep the outline separate so it never hides the colour.
+base = alt.Chart(data_sel).encode(
+    x=alt.X("Antibiotic:N",
+            title=None,
+            axis=alt.Axis(labelAngle=0)),
+    y=alt.Y("Bacteria:N",
+            sort="-x",
+            title=None)
 )
 
 heat = base.mark_rect().encode(
     color=alt.Color(
         "logMIC:Q",
         scale=alt.Scale(scheme="viridis",
-                        domain=[np.log10(0.001), np.log10(870)],
+                        domain=LOG_DOMAIN,
                         reverse=True),
-        legend=alt.Legend(title="log₁₀ MIC\n(lower = stronger)")
-    ),
-    tooltip=[
-        "Bacteria:N",
-        "Antibiotic:N",
-        alt.Tooltip("MIC:Q", title="MIC (µg/mL)", format=".3f"),
-        alt.Tooltip("Gram_Staining:N", title="Gram")
-    ]
-)
+        legend=None if not show_legend else alt.Legend(title="log₁₀ MIC\n(lower = stronger)")
+    )
+).properties(width=chart_width, height=chart_height)
 
-outline = base.transform_filter("datum.Sensitive").mark_rect(
-    stroke="black", strokeWidth=1.2, fillOpacity=0
-)
+outline = base.transform_filter("datum.Sensitive")\
+              .mark_rect(fillOpacity=0, stroke="black", strokeWidth=1.2)
 
 chart = (heat + outline).properties(
-    width=width_val,
-    height=450,
-    title=f"{'All Antibiotics' if choice=='All' else choice} Potency (black outline = MIC ≤ 1 µg/mL)"
+    title=f"{'All Antibiotics' if choice=='All' else choice} Potency "
+          "(black outline = MIC ≤ 1 µg/mL)"
 ).configure_title(anchor="start", fontSize=18)
 
-st.altair_chart(chart, use_container_width=False)
+st.altair_chart(chart, use_container_width=True)
 
-#Narrative section (static for brevity)
+#Narrative blurb
 
 if choice == "All":
     st.markdown(
     """
-    ### Key patterns
+    ### What jumps out?
+    * **Penicillin** excels only on *Gram-positives* (leftmost column full of outlines).  
+    * **Streptomycin** is the broadest hitter, covering several *Gram-negatives*.  
+    * **Neomycin** is usually dependable, yet *Streptococcus viridans* resists it.
 
-    * **Penicillin** works brilliantly on almost every *Gram-positive* species but fails on *Gram-negatives* (no black boxes).  
-    * **Streptomycin** delivers the broadest low-dose coverage, including several Gram-negatives (*Aerobacter*, *E. coli*, *Salmonella*).  
-    * **Neomycin** is potent for most bacteria, yet *Streptococcus viridans* shows strong resistance.
-
-    **Clinical takeaway:** Gram-negative bacteria’s outer membrane blocks Penicillin, so other drugs are preferred for those infections.
+    **Clinical takeaway:** Gram-negative outer membranes block Penicillin, so broader drugs are used for those infections.
     """
     )
 else:
-    # single-drug mini-insight
-    single_note = {
-        "Penicillin":
-        "*Great for Gram-positives, ineffective for Gram-negatives.*",
-        "Streptomycin":
-        "*Good cross-gram activity; covers several Penicillin-resistant strains.*",
-        "Neomycin":
-        "*Broad coverage but beware of pockets of resistance (e.g., *Strep. viridans*).*"
-    }[choice]
-    st.markdown(f"### Quick insight\n{single_note}")
+    notes = {
+        "Penicillin":     "Great for most Gram-positives; ineffective for Gram-negatives.",
+        "Streptomycin":   "Covers both Gram groups; handy for Penicillin-resistant bugs.",
+        "Neomycin":       "Potent overall but watch for *Strep. viridans* resistance."
+    }
+    st.markdown(f"### Quick insight\n{notes[choice]}")
 
-with st.expander("See raw numbers"):
+#Data table
+
+with st.expander("See raw MIC numbers"):
     if choice == "All":
         st.dataframe(df.set_index("Bacteria"))
     else:
