@@ -30,7 +30,28 @@ with st.container():
         """),
         unsafe_allow_html=True
     )
-
+st.markdown(
+    """
+    <div style="
+        border-left: 6px solid #7b2cbf;
+        background-color:#f6f3ff;
+        padding:0.75rem 1rem;
+        border-radius:6px;
+        margin-top:1rem;
+        font-size:0.95rem;">
+        <strong>What does <span style='color:#7b2cbf'>Gram-positive</span> mean?</strong><br>
+        In a classic Gram stain, bacteria with a <em>thick peptidoglycan cell wall</em> retain the
+        crystal-violet dye and appear <span style='color:#7b2cbf'>purple</span>.
+        <ul style="margin:0.3rem 0 0.2rem 1rem;">
+          <li>No outer membrane → Penicillin can easily reach its target.</li>
+          <li>Typical examples: <em>Staphylococcus, Streptococcus, Bacillus</em>.</li>
+        </ul>
+        By contrast, <strong>Gram-negative</strong> species have an extra outer membrane that
+        blocks many drugs—including Penicillin.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 data = [
     {"Bacteria":"Aerobacter aerogenes","Penicillin":870,"Streptomycin":1,"Neomycin":1.6,"Gram_Staining":"negative","Genus":"other"},
     {"Bacteria":"Bacillus anthracis","Penicillin":0.001,"Streptomycin":0.01,"Neomycin":0.007,"Gram_Staining":"positive","Genus":"other"},
