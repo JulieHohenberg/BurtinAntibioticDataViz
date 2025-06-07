@@ -10,18 +10,22 @@ st.set_page_config(page_title="Which Antibiotic Works Best?",
                    initial_sidebar_state="collapsed")
 
 st.title("How Potent Are Penicillin, Streptomycin & Neomycin?")
-st.markdown(
-"""
-**Robert Burtin’s classic 1951 experiment** measured the *minimum inhibitory concentration* (**MIC**)  
-of three antibiotics on 16 bacterial species.
+with st.container():
+    st.markdown(
+        """
+        <div style='text-align: left; width: 100%; font-size: 1.05rem;'>
+            <strong>Robert Burtin’s classic 1951 experiment</strong> measured the
+            <em>minimum inhibitory concentration</em> (<strong>MIC</strong>) of three antibiotics on 16 bacterial species.<br><br>
 
-* **Lower MIC ⇒ more potent drug** (less needed to stop growth).  
-* We treat **MIC ≤ 1 µg/mL** as a **“highly sensitive”** threshold.  
-* **Goal:** spot which drug works for which bug, and where resistance lurks.
+            • <strong>Lower MIC ⇒ more potent drug</strong> (less needed to stop growth).<br>
+            • MIC ≤ 1 µg/mL is a <strong>“highly sensitive”</strong> threshold.<br>
+            • <strong>Goal:</strong> Spot which drug works for which bug—and where resistance lurks.<br><br>
 
-Use the dropdown to focus on **one antibiotic** or view the **full comparison**.
-"""
-)
+            Use the dropdown to focus on <strong>one antibiotic</strong> or compare <strong>all three</strong>.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 data = [
     {"Bacteria":"Aerobacter aerogenes","Penicillin":870,"Streptomycin":1,"Neomycin":1.6,"Gram_Staining":"negative","Genus":"other"},
