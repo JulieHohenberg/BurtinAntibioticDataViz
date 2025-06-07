@@ -24,8 +24,7 @@ with st.container():
             Use the dropdown to focus on <strong>one antibiotic</strong> or compare <strong>all three</strong>.
         </div>
         """,
-        unsafe_allow_html=True
-    )
+        unsafe_allow_html=True)
 
 data = [
     {"Bacteria":"Aerobacter aerogenes","Penicillin":870,"Streptomycin":1,"Neomycin":1.6,"Gram_Staining":"negative","Genus":"other"},
