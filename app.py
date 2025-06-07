@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
+import textwrap
 
 #Page setup & intro
 
@@ -12,21 +13,21 @@ st.set_page_config(page_title="Which Antibiotic Works Best?",
 st.title("How Potent Are Penicillin, Streptomycin & Neomycin?")
 with st.container():
     st.markdown(
-        """
-        <div style='text-align: left; width: 100%; font-size: 1.05rem;'>
+        textwrap.dedent("""\
+        <div style='text-align:left;width:100%;font-size:1.05rem'>
+          <strong>Robert Burtin’s classic 1951 experiment</strong> measured the
+          <em>minimum inhibitory concentration</em> (<strong>MIC</strong>)
+          of three antibiotics on 16 bacterial species.
 
-            <strong>Robert Burtin’s classic 1951 experiment</strong> measured the
-            <em>minimum inhibitory concentration</em> (<strong>MIC</strong>) of three antibiotics on 16 bacterial species.
+          <ul>
+            <li><strong>Lower MIC ⇒ more potent drug</strong> (less needed to stop growth).</li>
+            <li><strong>MIC ≤ 1 µg/mL</strong> is a <strong>“highly sensitive”</strong> threshold.</li>
+            <li><strong>Goal:</strong> Spot which drug works for which bug—and where resistance lurks.</li>
+          </ul>
 
-            <ul>
-                <li><strong>Lower MIC ⇒ more potent drug</strong> (less needed to stop growth).</li>
-                <li><strong>MIC ≤ 1 µg/mL</strong> is a <strong>“highly sensitive”</strong> threshold.</li>
-                <li><strong>Goal:</strong> Spot which drug works for which bug—and where resistance lurks.</li>
-            </ul>
-
-            Use the dropdown to focus on <strong>one antibiotic</strong> or compare <strong>all three</strong>.
+          Use the dropdown to focus on <strong>one antibiotic</strong> or compare <strong>all three</strong>.
         </div>
-        """,
+        """),
         unsafe_allow_html=True
     )
 
