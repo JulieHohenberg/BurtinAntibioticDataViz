@@ -9,11 +9,17 @@ st.set_page_config(page_title="Which Antibiotic Works Best?",
                    layout="wide",
                    initial_sidebar_state="collapsed")
 
-st.title("Antibiotic Potency Across 16 Bacteria (Burtin, 1951)")
+st.title("How Potent Are Penicillin, Streptomycin & Neomycin?")
 st.markdown(
 """
-Lower **MIC** (Minimum Inhibitory Concentration) → greater potency.  
-Cells outlined in **black** meet a “highly sensitive” rule-of-thumb (**MIC ≤ 1 µg/mL**).
+**Robert Burtin’s classic 1951 experiment** measured the *minimum inhibitory concentration* (**MIC**)  
+of three antibiotics on 16 bacterial species.
+
+* **Lower MIC ⇒ more potent drug** (less needed to stop growth).  
+* We treat **MIC ≤ 1 µg/mL** as a **“highly sensitive”** threshold.  
+* **Goal:** spot which drug works for which bug, and where resistance lurks.
+
+Use the dropdown to focus on **one antibiotic** or view the **full comparison**.
 """
 )
 
@@ -47,88 +53,79 @@ long = df.melt(
 long["logMIC"]    = np.log10(long["MIC"])
 long["Sensitive"] = long["MIC"] <= 1
 
-# Colour scale domain frozen so the palette is consistent
-LOG_DOMAIN = [np.log10(0.001), np.log10(870)]  # [-3, 2.94]
 
-#Selector
+# Dropdown selector
 
 choice = st.selectbox(
-    "Pick an antibiotic (or view them all):",
-    ["All", "Penicillin", "Streptomycin", "Neomycin"]
+    "Antibiotic selection",
+    ["All", "Penicillin", "Streptomycin", "Neomycin"],
+    index=0
 )
 
 data_sel = long if choice == "All" else long[long["Antibiotic"] == choice]
+single   = choice != "All"
 
-# Chart width & legend handling
-single_col = choice != "All"
-chart_width = 340 if single_col else 600
-show_legend = not single_col   # hide legend when there’s just one column
+# Heat-map with conditional stroke (tooltips intact)
 
-# Chart height = 30 px per row
-unique_bugs = data_sel["Bacteria"].nunique()
-chart_height = unique_bugs * 30
+LOG_DOMAIN = [np.log10(0.001), np.log10(870)]
 
-#Heat-map with fixed band size
+# band width & height
+chart_width  = 320 if single else 600
+chart_height = data_sel["Bacteria"].nunique() * 30
 
-# We keep the outline separate so it never hides the colour.
-base = alt.Chart(data_sel).encode(
+heat = alt.Chart(data_sel).mark_rect().encode(
     x=alt.X("Antibiotic:N",
             title=None,
-            axis=alt.Axis(labelAngle=0)),
-    y=alt.Y("Bacteria:N",
-            sort="-x",
-            title=None)
-)
-
-heat = base.mark_rect().encode(
-    color=alt.Color(
-        "logMIC:Q",
-        scale=alt.Scale(scheme="viridis",
-                        domain=LOG_DOMAIN,
-                        reverse=True),
-        legend=None if not show_legend else alt.Legend(title="log₁₀ MIC\n(lower = stronger)")
-    )
-).properties(width=chart_width, height=chart_height)
-
-outline = base.transform_filter("datum.Sensitive")\
-              .mark_rect(fillOpacity=0, stroke="black", strokeWidth=1.2)
-
-chart = (heat + outline).properties(
-    title=f"{'All Antibiotics' if choice=='All' else choice} Potency "
-          "(black outline = MIC ≤ 1 µg/mL)"
+            axis=alt.Axis(labelAngle=-90)),   # vertical column names
+    y=alt.Y("Bacteria:N", sort="-x", title=None),
+    color=alt.Color("logMIC:Q",
+                    scale=alt.Scale(scheme="viridis",
+                                    domain=LOG_DOMAIN,
+                                    reverse=True),
+                    legend=None if single else alt.Legend(title="log₁₀ MIC\n(lower = stronger)")),
+    stroke=alt.condition("datum.Sensitive", alt.value("black"), alt.value("transparent")),
+    strokeWidth=alt.condition("datum.Sensitive", alt.value(1.3), alt.value(0)),
+    tooltip=[
+        alt.Tooltip("Bacteria:N"),
+        alt.Tooltip("Antibiotic:N"),
+        alt.Tooltip("MIC:Q", title="MIC (µg/mL)", format=".3f"),
+        alt.Tooltip("Gram_Staining:N", title="Gram")
+    ]
+).properties(
+    width=chart_width,
+    height=chart_height,
+    title=f"{'All Antibiotics' if choice=='All' else choice} Potency • Black outline = MIC ≤ 1 µg/mL"
 ).configure_title(anchor="start", fontSize=18)
 
-st.altair_chart(chart, use_container_width=True)
+st.altair_chart(heat, use_container_width=True)
 
-#Narrative blurb
+# Narrative (same text, minor tweak)
 
 if choice == "All":
     st.markdown(
     """
-    ### What jumps out?
-    * **Penicillin** excels only on *Gram-positives* (leftmost column full of outlines).  
-    * **Streptomycin** is the broadest hitter, covering several *Gram-negatives*.  
-    * **Neomycin** is usually dependable, yet *Streptococcus viridans* resists it.
-
-    **Clinical takeaway:** Gram-negative outer membranes block Penicillin, so broader drugs are used for those infections.
+    ### Quick observations
+    * **Penicillin** only excels on *Gram-positives* (left column full of outlines).  
+    * **Streptomycin** has the broadest low-dose reach, even on some *Gram-negatives*.  
+    * **Neomycin** is generally potent, but *Streptococcus viridans* resists it strongly.
     """
     )
 else:
     notes = {
-        "Penicillin":     "Great for most Gram-positives; ineffective for Gram-negatives.",
-        "Streptomycin":   "Covers both Gram groups; handy for Penicillin-resistant bugs.",
-        "Neomycin":       "Potent overall but watch for *Strep. viridans* resistance."
+        "Penicillin":   "Great for Gram-positives; ineffective for Gram-negatives.",
+        "Streptomycin": "Cross-gram activity; good fallback when Penicillin fails.",
+        "Neomycin":     "Broad but *Strep. viridans* stands out as resistant."
     }
-    st.markdown(f"### Quick insight\n{notes[choice]}")
+    st.markdown(f"### Insight on **{choice}**\n{notes[choice]}")
 
-#Data table
+# Raw data table
 
-with st.expander("See raw MIC numbers"):
-    if choice == "All":
-        st.dataframe(df.set_index("Bacteria"))
-    else:
+with st.expander("Show exact MIC numbers"):
+    if single:
         st.dataframe(
             df[["Bacteria", choice]]
               .set_index("Bacteria")
               .rename(columns={choice: f"{choice} MIC (µg/mL)"})
         )
+    else:
+        st.dataframe(df.set_index("Bacteria"))
