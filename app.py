@@ -31,45 +31,28 @@ with st.container():
         unsafe_allow_html=True
     )
   
-st.markdown("""
-<div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+with st.expander("🟣 What are Gram-positive bacteria?"):
+    st.markdown("""
+    **Gram-positive bacteria** have a **thick peptidoglycan cell wall** that retains violet dye during a Gram stain.
 
-  <div style="
-      flex: 1 1 300px;
-      border-left: 6px solid #7b2cbf;
-      background-color: #f6f3ff;
-      padding: 0.75rem 1rem;
-      border-radius: 6px;
-      font-size: 0.95rem;
-  ">
-    <strong style="color:#7b2cbf">Gram-positive bacteria</strong><br>
-    These have a <em>thick peptidoglycan cell wall</em> that retains violet dye during a Gram stain.<br>
-    <ul style="margin: 0.4rem 0 0.2rem 1.1rem;">
-      <li>No outer membrane</li>
-      <li>Penicillin can usually reach its target easily</li>
-      <li><em>Examples:</em> Staphylococcus, Streptococcus, Bacillus</li>
-    </ul>
-  </div>
+    - No outer membrane  
+    - Penicillin can usually reach its target easily  
+    - *Examples:* **Staphylococcus**, **Streptococcus**, **Bacillus**
+    
+    These typically appear **purple** under the microscope.
+    """)
 
-  <div style="
-      flex: 1 1 300px;
-      border-left: 6px solid #e63946;
-      background-color: #fff5f6;
-      padding: 0.75rem 1rem;
-      border-radius: 6px;
-      font-size: 0.95rem;
-  ">
-    <strong style="color:#e63946">Gram-negative bacteria</strong><br>
-    These have a <em>thin cell wall</em> plus an <strong>outer membrane</strong> that blocks certain drugs.<br>
-    <ul style="margin: 0.4rem 0 0.2rem 1.1rem;">
-      <li>Do not retain violet stain → appear red/pink</li>
-      <li>Penicillin is often ineffective</li>
-      <li><em>Examples:</em> E. coli, Salmonella, Pseudomonas</li>
-    </ul>
-  </div>
+with st.expander("🔴 What are Gram-negative bacteria?"):
+    st.markdown("""
+    **Gram-negative bacteria** have a **thin cell wall** and an **outer membrane** that blocks many antibiotics, including Penicillin.
 
-</div>
-""", unsafe_allow_html=True)
+    - Do not retain violet stain → appear **pink/red**  
+    - Outer membrane provides strong defense  
+    - *Examples:* **E. coli**, **Salmonella**, **Pseudomonas**
+
+    These are usually more resistant to classic antibiotics.
+    """)
+
 
 data = [
     {"Bacteria":"Aerobacter aerogenes","Penicillin":870,"Streptomycin":1,"Neomycin":1.6,"Gram_Staining":"negative","Genus":"other"},
