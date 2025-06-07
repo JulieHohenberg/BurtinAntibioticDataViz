@@ -1,9 +1,19 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import numpy as np
 
-st.set_page_config(page_title="Bacteria Antibiotic Resistance", layout="wide")
-st.title("Bacteria Sensitivity to Antibiotics")
+st.set_page_config(page_title="Which Antibiotic Works Best?",
+                   layout="wide",
+                   initial_sidebar_state="collapsed")
+
+st.title("Antibiotic Potency Across 16 Bacteria (Burtin, 1951)")
+st.markdown(
+"""
+The lower the **MIC** (Minimum Inhibitory Concentration), the less drug needed to halt growth.  
+**≤ 1 µg/mL** is a common “highly sensitive” benchmark in early literature.
+"""
+)
 
 
 data = [
@@ -27,61 +37,62 @@ data = [
 
 df = pd.DataFrame(data)
 
-THRESHOLD = 1           # μg/mL
-df["Status"] = df["Penicillin"].apply(lambda x: "Highly sensitive (≤1)" if x <= THRESHOLD else "Resistant (>1)")
+# tidy format (long)
+long = df.melt(
+    id_vars=["Bacteria", "Gram_Staining", "Genus"],
+    value_vars=["Penicillin", "Streptomycin", "Neomycin"],
+    var_name="Antibiotic",
+    value_name="MIC"
+)
+long["logMIC"] = np.log10(long["MIC"])          # log10 for smooth colour
+long["Sensitive"] = long["MIC"] <= 1            # bool for annotation
 
-# sort so most-resistant appear at top for quick comparison
-df_sorted = df.sort_values("Penicillin", ascending=False)
-
-base = alt.Chart(df_sorted).encode(
+base = alt.Chart(long).encode(
+    x=alt.X("Antibiotic:N", title=None),
     y=alt.Y("Bacteria:N", sort="-x", title=None),
-    x=alt.X("Penicillin:Q",
-            scale=alt.Scale(type="log"),
-            title="Penicillin MIC (μg/mL, log scale)"),
-    color=alt.Color("Gram_Staining:N",
-                    scale=alt.Scale(domain=["positive", "negative"],
-                                    range=["#7b2cbf", "#e63946"]),
-                    legend=alt.Legend(title="Gram stain")),
+)
+
+heat = base.mark_rect().encode(
+    color=alt.Color(
+        "logMIC:Q",
+        scale=alt.Scale(scheme="viridis", domain=[np.log10(0.001), np.log10(870)], reverse=True),
+        legend=alt.Legend(title="log10 MIC\n(lower = stronger)")
+    ),
     tooltip=[
         alt.Tooltip("Bacteria:N"),
-        alt.Tooltip("Penicillin:Q", format=".3f", title="MIC (μg/mL)"),
+        alt.Tooltip("Antibiotic:N"),
+        alt.Tooltip("MIC:Q", title="MIC (µg/mL)", format=".3f"),
         alt.Tooltip("Gram_Staining:N", title="Gram"),
-        alt.Tooltip("Status:N")
     ]
 )
 
-bars = base.mark_bar(size=10, opacity=0.9)
+# outline the “clinically effective” cells
+outline = base.transform_filter("datum.Sensitive").mark_rect(
+    fillOpacity=0, stroke="black", strokeWidth=1.2
+)
 
-# Vertical rule for clinical threshold
-rule = alt.Chart(pd.DataFrame({"x":[THRESHOLD]})).mark_rule(
-        strokeDash=[4,4], color="black").encode(x="x:Q")
+chart = (heat + outline).properties(
+    width=550, height=450,
+    title="Where Each Antibiotic Shines (black boxes = MIC ≤ 1 µg/mL)"
+).configure_title(anchor="start", fontSize=18)
 
-rule_text = alt.Chart(pd.DataFrame({
-        "x":[THRESHOLD*1.1], "y":[df_sorted["Bacteria"].iloc[0]],
-        "text":["≤1 μg/mL → usually curative"]
-    })).mark_text(align="left", baseline="middle",
-                  dx=4, fontSize=12, fontStyle="italic").encode(
-        x="x:Q", y="y:N", text="text:N")
+st.altair_chart(chart, use_container_width=False)
 
-# Call-out labels for extreme points
-extremes = df_sorted[(df_sorted["Penicillin"]<=0.01) | (df_sorted["Penicillin"]>=800)]
+st.markdown(
+"""
+### What jumps out?
 
-labels = alt.Chart(extremes).mark_text(
-        align="left", dx=4, fontSize=11, fontWeight="bold"
-    ).encode(
-        y="Bacteria:N",
-        x="Penicillin:Q",
-        text=alt.Text("Bacteria:N")
-    )
+* **Penicillin** (left column) is stellar against nearly every *Gram-positive* species (black boxes galore) yet fails on all *Gram-negatives* (no outlines).  
+* **Streptomycin** shows the broadest low-dose activity, including several Gram-negatives (*Aerobacter*, *E. coli*, *Salmonella*).  
+* **Neomycin** is a reliable fallback—low MICs for most species—but note the dramatic resistance in *Streptococcus viridans* (far-right bright square).
 
-# Layer everything
-chart = (bars + rule + rule_text + labels).properties(
-            width=800, height=500,
-            title="Gram-positive bacteria need tiny doses of Penicillin, "
-                  "while Gram-negative strains often resist it"
-        ).configure_title(fontSize=18, anchor="start")
+> **Take-home:** Cell-wall structure matters. Gram-negative bacteria’s outer membrane blocks Penicillin, so clinicians pivot to Streptomycin or Neomycin for those infections.
+"""
+)
 
-st.altair_chart(chart, use_container_width=True)
+# data peek
+with st.expander("See raw numbers"):
+    st.dataframe(df.set_index("Bacteria"))
 
 
 
